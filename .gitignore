@@ -1,0 +1,8 @@
+.venv/
+.playwright-browsers/
+__pycache__/
+*.pyc
+runtime/
+app/data/*.db
+.env
+artifacts/

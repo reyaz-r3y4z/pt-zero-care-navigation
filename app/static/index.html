@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PT Zero synthetic multi-agent healthcare navigation MVP">
+  <title>PT Zero · Care Navigation</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/"><span class="brand-mark">P0</span> PT Zero</a>
+    <div class="nav-right"><span id="user-label"></span><button id="logout" class="button-secondary hidden">Sign out</button></div>
+  </nav>
+
+  <header>
+    <div><span class="badge">SYNTHETIC · EXPLAINABLE · SAFETY-FIRST</span>
+      <h1>Find the right<br><em>path to care.</em></h1>
+      <p>Seven focused agents turn a structured patient report into grounded guidance and transparent fictional provider matches.</p>
+    </div>
+    <div class="flow" aria-label="Agent workflow">
+      <span>01 Intake</span><span>02 Safety gate</span><span>03 Care routing</span>
+      <span>04 RAG evidence</span><span>05 Provider search</span><span>06 Availability</span><span>07 Ranking</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="auth-card" class="card auth-card">
+      <div><span class="eyebrow">SECURE DEMO ACCESS</span><h2>Enter the care-navigation lab</h2>
+        <p class="muted">Create a demonstration account. Passwords are Argon2-hashed and sessions use protected cookies.</p>
+      </div>
+      <form id="auth-form">
+        <label id="name-field">Display name<input id="display-name" autocomplete="name" value="Demo Reviewer"></label>
+        <label>Email<input id="email" type="email" autocomplete="email" value="reviewer@example.com" required></label>
+        <label>Password<input id="password" type="password" minlength="12" autocomplete="new-password" value="DemoPassword!2026" required></label>
+        <button id="auth-submit" type="submit">Create demo account</button>
+        <button id="auth-switch" type="button" class="text-button">Already registered? Sign in</button>
+        <p id="auth-error" class="error" role="alert"></p>
+      </form>
+    </section>
+
+    <div id="workspace" class="workspace hidden">
+      <section class="card intake-card">
+        <div class="section-heading"><div><span class="eyebrow">PATIENT INTAKE</span><h2>Describe the concern</h2></div><span class="step">01</span></div>
+        <p class="muted">Use only fictional information. This prototype does not diagnose or provide medical advice.</p>
+        <form id="patient-form">
+          <label>Sample scenario<select id="sample"><option value="">Enter a custom demonstration</option></select></label>
+          <div class="grid">
+            <label>Age<input id="age" type="number" min="0" max="120" value="34" required></label>
+            <label>Duration in days<input id="duration" type="number" min="0" value="8" required></label>
+          </div>
+          <label>Symptoms, separated by commas<textarea id="symptoms" required>itchy skin rash, dry skin</textarea></label>
+          <label>Severity <span><strong id="severity-value">5</strong>/10</span><input id="severity" type="range" min="0" max="10" value="5"></label>
+          <div class="grid">
+            <label>Location<select id="location"><option value="sydney">Sydney Demo</option><option value="parramatta">Parramatta Demo</option><option value="chatswood">Chatswood Demo</option></select></label>
+            <label>Consultation<select id="mode"><option value="either">Either</option><option value="in_person">In person</option><option value="telehealth">Telehealth</option></select></label>
+            <label>Preferred language<select id="language"><option>English</option><option>Arabic</option><option>Hindi</option><option>Mandarin</option><option>Urdu</option></select></label>
+            <label>Maximum travel (km)<input id="travel" type="number" min="1" max="200" value="30"></label>
+          </div>
+          <button type="submit">Run seven-agent workflow <span>→</span></button>
+        </form>
+      </section>
+      <section id="results" class="card results-card placeholder" aria-live="polite">
+        <div class="radar"><span></span><span></span><span></span></div>
+        <h2>Agent results appear here</h2><p class="muted">Select a sample case and run the workflow to inspect routing, evidence, rankings, and the complete decision trace.</p>
+      </section>
+    </div>
+  </main>
+  <footer>PT Zero is an educational synthetic-data prototype—not a medical service.</footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "generated_at": "2026-09-16T00:50:05.864402+00:00",
+    "cases": 250,
+    "seed": 2026
+  },
+  "quality": {
+    "routing_accuracy": 1.0,
+    "emergency_stop_recall": 1.0,
+    "provider_result_rate": 1.0
+  },
+  "latency_ms": {
+    "mean": 0.263,
+    "p50": 0.283,
+    "p95": 0.413,
+    "max": 0.722
+  },
+  "thresholds": {
+    "routing_accuracy": 0.95,
+    "emergency_stop_recall": 1.0,
+    "p95_ms": 100.0
+  },
+  "disclaimer": "Synthetic authored scenarios only; not a clinical-effectiveness measurement."
+}
+

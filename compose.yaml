@@ -1,0 +1,28 @@
+services:
+  pt-zero:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pt-zero-mvp
+    ports:
+      - "8000:8000"
+    volumes:
+      - pt-zero-data:/app/runtime
+    restart: unless-stopped
+
+  demo-recorder:
+    profiles: ["demo"]
+    build:
+      context: .
+      dockerfile: Dockerfile.demo
+    environment:
+      BASE_URL: http://pt-zero:8000
+      OUTPUT_DIR: /artifacts
+    volumes:
+      - ./artifacts:/artifacts
+    depends_on:
+      pt-zero:
+        condition: service_healthy
+
+volumes:
+  pt-zero-data:

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: pt-zero-care-navigation
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_PATH
+        value: /tmp/pt_zero.db
+      - key: PYTHONUNBUFFERED
+        value: "1"

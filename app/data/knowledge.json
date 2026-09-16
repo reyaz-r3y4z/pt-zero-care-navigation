@@ -1,0 +1,39 @@
+[
+  {
+    "title": "Prototype emergency-routing policy",
+    "source": "PT Zero authored demo policy v1",
+    "tags": ["emergency", "chest pressure", "shortness of breath", "stroke", "bleeding"],
+    "text": "Configured emergency warning signs must stop automated provider ranking and escalate to local emergency assistance. This demonstration rule is not a complete clinical triage protocol."
+  },
+  {
+    "title": "Skin-care navigation",
+    "source": "PT Zero authored demo navigation note v1",
+    "tags": ["skin", "rash", "itchy", "dermatology", "dry patches"],
+    "text": "Persistent non-emergency skin concerns may be assessed by general practice or dermatology. The application recommends a care category and does not determine a diagnosis."
+  },
+  {
+    "title": "Headache-care navigation",
+    "source": "PT Zero authored demo navigation note v1",
+    "tags": ["headache", "migraine", "nausea", "neurology", "light sensitivity"],
+    "text": "Recurring non-emergency headaches may begin with general practice assessment, with neurology as a relevant specialty when clinically appropriate."
+  },
+  {
+    "title": "Musculoskeletal-care navigation",
+    "source": "PT Zero authored demo navigation note v1",
+    "tags": ["knee", "joint", "stiffness", "orthopaedics", "physiotherapy", "mobility"],
+    "text": "Non-emergency joint and mobility concerns may involve general practice, physiotherapy, or orthopaedic services depending on professional assessment."
+  },
+  {
+    "title": "Mental-health navigation",
+    "source": "PT Zero authored demo navigation note v1",
+    "tags": ["anxiety", "worry", "stress", "sleep", "psychology"],
+    "text": "People seeking non-emergency anxiety or stress support may consider general practice or psychology services. Urgent safety concerns require immediate human support."
+  },
+  {
+    "title": "General care-navigation policy",
+    "source": "PT Zero authored demo policy v1",
+    "tags": ["general practice", "doctor", "care", "unknown", "symptoms"],
+    "text": "When the available information does not clearly match a specialty, the prototype uses general practice as its default navigation category."
+  }
+]
+
