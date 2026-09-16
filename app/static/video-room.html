@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PT Zero · Simulated On-call Room</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="video-page">
+  <main class="video-shell">
+    <section class="card video-card">
+      <span class="badge">SIMULATION ONLY · NO CLINICIAN IS CONNECTED</span>
+      <div class="video-stage">
+        <div class="avatar">DR</div>
+        <span class="pulse-dot"></span>
+        <p>Temporary on-call demonstration room</p>
+        <strong id="room-name">ONCALL-DEMO</strong>
+        <span id="timer">00:00</span>
+      </div>
+      <div class="alert">
+        <strong>This is not an emergency service.</strong>
+        <p>If someone may be in immediate danger, contact the official emergency service for their location. No real doctor receives this call.</p>
+      </div>
+      <div class="call-controls">
+        <button id="start-call">Start simulated call</button>
+        <button id="end-call" class="danger-button" disabled>End simulation</button>
+        <a class="button-link" href="/">Return to PT Zero</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    const room = new URLSearchParams(location.search).get("room") || "ONCALL-DEMO";
+    document.querySelector("#room-name").textContent = room.replace(/[^A-Z0-9-]/gi, "");
+    let seconds = 0, interval;
+    document.querySelector("#start-call").onclick = event => {
+      event.target.disabled = true;
+      document.querySelector("#end-call").disabled = false;
+      interval = setInterval(() => {
+        seconds += 1;
+        document.querySelector("#timer").textContent = `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`;
+      }, 1000);
+    };
+    document.querySelector("#end-call").onclick = event => {
+      clearInterval(interval); event.target.disabled = true;
+      document.querySelector("#start-call").textContent = "Simulation ended";
+    };
+  </script>
+</body>
+</html>

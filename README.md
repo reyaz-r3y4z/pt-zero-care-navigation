@@ -1,6 +1,6 @@
 # PT Zero — Explainable Multi-Agent Care Navigation
 
-PT Zero is a full-stack educational MVP that turns a structured, fictional
+PT Zero is a full-stack educational operations MVP that turns a structured, fictional
 patient report into grounded care-category guidance and transparent fictional
 provider matches. Seven narrow agents collaborate behind a deterministic safety
 gate, and every decision is visible in an execution trace.
@@ -36,7 +36,12 @@ Authenticated web form
 - Double-submit and server-validated CSRF protection
 - Protected provider and navigation APIs
 - Constrained-random synthetic patient generator
-- SQLite doctor, hospital, user, session, and appointment data
+- SQLite doctor, hospital, patient, user, session, appointment, navigation, and audit data
+- 50 fictional hospitals, 50 fictional doctors, and 20 fictional patients
+- Nearby medical-field directory with distance and fictional work contacts
+- Transactional fictional appointment booking and appointment ledger
+- Database-backed activity logging without request bodies or credentials
+- Clearly labeled temporary on-call video-room simulation
 - Local inspectable RAG with source evidence
 - Emergency workflow termination before provider ranking
 - Distance, availability, language, accessibility, and specialty ranking
@@ -92,7 +97,7 @@ Latest verified local result:
 | Routing accuracy | 100% | ≥95% |
 | Emergency-stop recall | 100% | 100% |
 | Provider-result rate | 100% | reported |
-| Core workflow p95 | 0.413 ms | ≤100 ms |
+| Core workflow p95 | 1.145 ms | ≤100 ms |
 
 This benchmark measures the deterministic core on authored synthetic scenarios;
 it is not a clinical-effectiveness claim. See
@@ -159,6 +164,27 @@ to `main` also publish the container to GitHub Container Registry.
 | `tests/` | Unit, API, authentication, and security tests |
 | `benchmarks/` | Reproducible accuracy and latency benchmark |
 | `demo/` | Automated showcase recording |
+
+## Version 3 operations data
+
+The application initializes an idempotent synthetic dataset on startup:
+
+| Record | Seeded count | Purpose |
+|---|---:|---|
+| Hospitals | 50 | Locations, medical fields, accessibility, fictional work contacts |
+| Doctors | 50 | Specialties, languages, availability, fictional work contacts |
+| Patients | 20 | Saved fictional profiles for demonstrations |
+| Slots | Variable | Four weekday slots per doctor over two weeks |
+
+Authenticated workflows also create `appointments`, `navigation_runs`, and
+`activity_logs`. Activity events record route metadata and status codes, never
+passwords, cookies, CSRF values, or request bodies. The current Render free
+deployment stores SQLite under `/tmp`, so this operational data can reset when
+the instance is replaced. A real persistent deployment should use PostgreSQL.
+
+The booking adapter confirms appointments only inside the fictional PT Zero
+network. Email addresses use reserved `.example` domains, and the video room is
+a timer-based simulation that never connects to a clinician.
 
 ## Study order
 

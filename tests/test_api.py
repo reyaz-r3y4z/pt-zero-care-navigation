@@ -83,6 +83,51 @@ class APITests(unittest.TestCase):
         })
         self.assertEqual(correct.status_code, 200)
 
+    def test_seeded_operations_directory(self) -> None:
+        self.assertEqual(self.register().status_code, 201)
+        dashboard = self.client.get("/api/dashboard").json()
+        self.assertEqual(dashboard["hospitals"], 50)
+        self.assertEqual(dashboard["doctors"], 50)
+        self.assertEqual(dashboard["patients"], 20)
+        self.assertGreaterEqual(dashboard["medical_fields"], 15)
+        self.assertEqual(len(self.client.get("/api/providers").json()), 50)
+        self.assertEqual(len(self.client.get("/api/hospitals").json()), 50)
+        self.assertEqual(len(self.client.get("/api/patients").json()), 20)
+
+    def test_nearby_fields_booking_and_activity_log(self) -> None:
+        self.assertEqual(self.register().status_code, 201)
+        nearby = self.client.get("/api/medical-fields/nearby?patient_id=PAT-001")
+        self.assertEqual(nearby.status_code, 200)
+        self.assertEqual(len(nearby.json()), 10)
+        self.assertTrue(nearby.json()[0]["medical_fields"])
+
+        patient = {**PATIENT, "patient_id": "PAT-001"}
+        navigation = self.client.post(
+            "/api/navigate", json=patient, headers={"X-CSRF-Token": self.csrf()}
+        )
+        self.assertEqual(navigation.status_code, 200)
+        recommendation = navigation.json()["recommendations"][0]
+        booked = self.client.post("/api/appointments", headers={"X-CSRF-Token": self.csrf()}, json={
+            "patient_id": "PAT-001", "slot_id": recommendation["slot_id"],
+            "reason": "Synthetic test booking",
+        })
+        self.assertEqual(booked.status_code, 201)
+        self.assertEqual(booked.json()["status"], "confirmed")
+        self.assertEqual(booked.json()["integration_status"], "synthetic_hospital_confirmed")
+        self.assertEqual(len(self.client.get("/api/appointments").json()), 1)
+        event_types = {item["event_type"] for item in self.client.get("/api/activity").json()}
+        self.assertIn("navigation_completed", event_types)
+        self.assertIn("appointment_booked", event_types)
+
+    def test_on_call_rooms_are_explicitly_synthetic(self) -> None:
+        self.assertEqual(self.register().status_code, 201)
+        doctors = self.client.get("/api/on-call").json()
+        self.assertTrue(doctors)
+        self.assertTrue(all(item["synthetic"] for item in doctors))
+        self.assertTrue(all(item["video_room_url"].startswith("/video-room.html") for item in doctors))
+        page = self.client.get("/video-room.html")
+        self.assertIn("NO CLINICIAN IS CONNECTED", page.text)
+
 
 if __name__ == "__main__":
     unittest.main()

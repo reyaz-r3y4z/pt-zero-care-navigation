@@ -12,29 +12,11 @@ DISCLAIMER = (
     "medical advice, verify practitioners, or make real appointments."
 )
 
-HOSPITALS = [
-    {
-        "id": "HOSP-001", "name": "Demo Harbour Health Centre",
-        "address": "100 Example Street, Sydney Demo NSW",
-        "latitude": -33.8688, "longitude": 151.2093,
-        "accessibility": ["wheelchair_access", "accessible_parking"],
-    },
-    {
-        "id": "HOSP-002", "name": "Demo Western Community Hospital",
-        "address": "200 Sample Road, Parramatta Demo NSW",
-        "latitude": -33.8150, "longitude": 151.0011,
-        "accessibility": ["wheelchair_access", "interpreter_service"],
-    },
-    {
-        "id": "HOSP-003", "name": "Demo North Specialist Centre",
-        "address": "300 Prototype Avenue, Chatswood Demo NSW",
-        "latitude": -33.7969, "longitude": 151.1833,
-        "accessibility": ["wheelchair_access"],
-    },
-]
-
 SPECIALTIES = {
     "general_practice": ("General Practitioner", ["general assessment", "preventive care"]),
+    "emergency_medicine": ("Emergency Physician", ["urgent assessment", "emergency care"]),
+    "cardiology": ("Cardiologist", ["heart health", "cardiac assessment"]),
+    "respiratory_medicine": ("Respiratory Physician", ["breathing", "lung health"]),
     "dermatology": ("Dermatologist", ["skin rash", "eczema", "acne"]),
     "neurology": ("Neurologist", ["headache", "migraine", "neurological symptoms"]),
     "orthopaedics": ("Orthopaedic Specialist", ["joint pain", "knee pain", "mobility"]),
@@ -42,9 +24,60 @@ SPECIALTIES = {
     "paediatrics": ("Paediatrician", ["child health", "fever", "development"]),
     "endocrinology": ("Endocrinologist", ["diabetes", "thyroid", "hormonal health"]),
     "psychology": ("Psychologist", ["anxiety", "stress", "sleep difficulties"]),
+    "psychiatry": ("Psychiatrist", ["mental health", "medication review"]),
+    "gastroenterology": ("Gastroenterologist", ["digestive health", "abdominal symptoms"]),
+    "ophthalmology": ("Ophthalmologist", ["eye health", "vision assessment"]),
+    "ent": ("ENT Specialist", ["ear health", "nose and throat"]),
+    "womens_health": ("Women's Health Specialist", ["reproductive health", "preventive care"]),
+    "urology": ("Urologist", ["urinary health", "kidney assessment"]),
+    "oncology": ("Oncologist", ["cancer care", "treatment coordination"]),
+    "dentistry": ("Dentist", ["oral health", "dental assessment"]),
+    "podiatry": ("Podiatrist", ["foot health", "gait assessment"]),
 }
 
 LANGUAGES = ["Arabic", "Hindi", "Mandarin", "Urdu", "Vietnamese"]
+
+SUBURBS = [
+    ("Sydney Demo", -33.8688, 151.2093),
+    ("Parramatta Demo", -33.8150, 151.0011),
+    ("Chatswood Demo", -33.7969, 151.1833),
+    ("Bondi Demo", -33.8915, 151.2767),
+    ("Liverpool Demo", -33.9200, 150.9238),
+    ("Ryde Demo", -33.8151, 151.1062),
+    ("Penrith Demo", -33.7507, 150.6877),
+    ("Hurstville Demo", -33.9676, 151.1010),
+    ("Manly Demo", -33.7960, 151.2850),
+    ("Burwood Demo", -33.8774, 151.1030),
+]
+
+
+def generate_hospitals(count: int = 50, seed: int = 42) -> list[dict[str, Any]]:
+    """Create a geographically varied, entirely fictional provider network."""
+    rng = random.Random(seed)
+    specialty_names = list(SPECIALTIES)
+    hospitals = []
+    for index in range(1, count + 1):
+        suburb, base_latitude, base_longitude = SUBURBS[(index - 1) % len(SUBURBS)]
+        fields = [specialty_names[(index - 1 + offset * 3) % len(specialty_names)] for offset in range(4)]
+        if "general_practice" not in fields:
+            fields[0] = "general_practice"
+        hospitals.append({
+            "id": f"HOSP-{index:03d}",
+            "name": f"Demo {suburb.removesuffix(' Demo')} Health Network {index:02d}",
+            "address": f"{80 + index} Synthetic Avenue, {suburb} NSW",
+            "latitude": round(base_latitude + rng.uniform(-0.018, 0.018), 6),
+            "longitude": round(base_longitude + rng.uniform(-0.018, 0.018), 6),
+            "accessibility": ["wheelchair_access", rng.choice(["accessible_parking", "interpreter_service"])],
+            "email": f"intake{index:02d}@hospital.ptzero.example",
+            "phone": f"+61 2 9000 {index:04d}",
+            "emergency_phone": "000 (demonstration label only)",
+            "medical_fields": sorted(set(fields)),
+            "synthetic": True,
+        })
+    return hospitals
+
+
+HOSPITALS = generate_hospitals()
 
 PATIENT_SCENARIOS = [
     {
@@ -142,14 +175,18 @@ class SyntheticPatientGenerator:
 
 
 def generate_records(seed: int = 42, start_date: date | None = None) -> dict[str, list[dict[str, Any]]]:
-    """Generate a coherent provider network and future appointment slots."""
+    """Generate 50 hospitals, 50 doctors, 20 patients, and future slots."""
     rng = random.Random(seed)
     start_date = start_date or date.today()
+    hospitals = generate_hospitals(50, seed)
     doctors: list[dict[str, Any]] = []
     slots: list[dict[str, Any]] = []
+    patients: list[dict[str, Any]] = []
+    specialties = list(SPECIALTIES.items())
 
-    for index, (specialty, (title, expertise)) in enumerate(SPECIALTIES.items(), start=1):
-        hospital = HOSPITALS[(index - 1) % len(HOSPITALS)]
+    for index in range(1, 51):
+        specialty, (title, expertise) = specialties[(index - 1) % len(specialties)]
+        hospital = hospitals[index - 1]
         doctor = {
             "id": f"DOC-{index:03d}",
             "name": f"Dr Demo {index:03d}",
@@ -160,22 +197,44 @@ def generate_records(seed: int = 42, start_date: date | None = None) -> dict[str
             "years_experience": rng.randint(4, 25),
             "accepting_new_patients": index % 6 != 0,
             "hospital_id": hospital["id"],
+            "email": f"doctor{index:03d}@clinicians.ptzero.example",
+            "phone": f"+61 2 9100 {index:04d}",
+            "on_call": specialty in {"emergency_medicine", "general_practice"} and index % 2 == 0,
+            "video_room_url": f"/video-room.html?room=ONCALL-{index:03d}",
             "synthetic": True,
         }
         doctors.append(doctor)
 
-        for day_offset in range(1, 8):
+        for day_offset in range(1, 15):
             slot_day = start_date + timedelta(days=day_offset)
             if slot_day.weekday() >= 5:
                 continue
             for hour in (9, 11, 14, 16):
                 start = datetime.combine(slot_day, time(hour), tzinfo=timezone.utc)
                 slots.append({
-                    "id": f"SLOT-{index:03d}-{day_offset:02d}-{hour:02d}",
+                    "id": f"SLOT-{index:03d}-{slot_day:%Y%m%d}-{hour:02d}",
                     "doctor_id": doctor["id"],
                     "start": start.isoformat(),
                     "end": (start + timedelta(minutes=30)).isoformat(),
                     "status": "free" if (index + day_offset + hour) % 4 else "busy",
                     "mode": "telehealth" if hour == 16 else "in_person",
                 })
-    return {"hospitals": HOSPITALS, "doctors": doctors, "slots": slots}
+
+    generated_cases = SyntheticPatientGenerator(seed + 10).generate(20)
+    for index, case in enumerate(generated_cases, start=1):
+        suburb, latitude, longitude = SUBURBS[(index - 1) % len(SUBURBS)]
+        patients.append({
+            "id": f"PAT-{index:03d}",
+            "display_name": f"Synthetic Patient {index:02d}",
+            "email": f"patient{index:03d}@people.ptzero.example",
+            "age": case["age"],
+            "suburb": suburb,
+            "latitude": latitude,
+            "longitude": longitude,
+            "conditions": [case["expected_specialty"].replace("_", " ") + " demonstration"],
+            "medications": [] if index % 3 else ["Synthetic medication record"],
+            "allergies": [] if index % 4 else ["Synthetic allergy record"],
+            "synthetic": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    return {"hospitals": hospitals, "doctors": doctors, "slots": slots, "patients": patients}

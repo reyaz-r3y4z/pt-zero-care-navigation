@@ -9,10 +9,11 @@ from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Query, Requ
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.agents import Coordinator
+from app.agents import Coordinator, distance_km
 from app.auth import AuthService, SESSION_HOURS
 from app.models import (
-    AuthResponse, LoginRequest, NavigationResponse, PatientRequest, RegisterRequest, UserPublic,
+    AppointmentRequest, AuthResponse, LoginRequest, NavigationResponse, PatientRequest,
+    RegisterRequest, UserPublic,
 )
 from app.rag import KnowledgeBase
 from app.repository import Repository
@@ -63,8 +64,8 @@ def create_app(database_path: Path | None = None) -> FastAPI:
         repository.close()
 
     app = FastAPI(
-        title="PT Zero Care Navigation", version="2.0.0", lifespan=lifespan,
-        description="Authenticated, synthetic-only multi-agent care-navigation learning MVP.",
+        title="PT Zero Care Navigation", version="3.0.0", lifespan=lifespan,
+        description="Authenticated synthetic multi-agent care navigation and operations MVP.",
     )
     app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 
@@ -85,6 +86,16 @@ def create_app(database_path: Path | None = None) -> FastAPI:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+            if request.url.path != "/api/health" and hasattr(request.app.state, "repository"):
+                token = request.cookies.get(SESSION_COOKIE)
+                session = request.app.state.auth.authenticate(token) if token else None
+                request.app.state.repository.log_activity(
+                    event_type="api_request",
+                    user_id=session.get("user_id") if session else None,
+                    route=request.url.path,
+                    method=request.method,
+                    status_code=response.status_code,
+                )
         return response
 
     def current_session(
@@ -113,9 +124,14 @@ def create_app(database_path: Path | None = None) -> FastAPI:
     def home() -> FileResponse:
         return FileResponse(BASE / "static" / "index.html")
 
+    @app.get("/video-room.html", include_in_schema=False)
+    def video_room() -> FileResponse:
+        return FileResponse(BASE / "static" / "video-room.html")
+
     @app.get("/api/health")
     def health() -> dict:
-        return {"status": "healthy", "synthetic_only": True, "agents": 7, "auth": "enabled"}
+        return {"status": "healthy", "synthetic_only": True, "agents": 7,
+                "auth": "enabled", "version": "3.0.0"}
 
     @app.post("/api/auth/register", response_model=AuthResponse, status_code=201)
     def register(payload: RegisterRequest, response: Response, request: Request) -> AuthResponse:
@@ -126,6 +142,9 @@ def create_app(database_path: Path | None = None) -> FastAPI:
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         set_auth_cookies(response, issued.token, issued.csrf_token, cookie_secure)
+        request.app.state.repository.log_activity(
+            "account_registered", issued.user["id"], "user", issued.user["id"]
+        )
         return AuthResponse(
             user=UserPublic.model_validate(request.app.state.auth.public_user(issued.user)),
             message="Account created",
@@ -138,6 +157,9 @@ def create_app(database_path: Path | None = None) -> FastAPI:
         except ValueError as error:
             raise HTTPException(status_code=401, detail=str(error)) from error
         set_auth_cookies(response, issued.token, issued.csrf_token, cookie_secure)
+        request.app.state.repository.log_activity(
+            "user_login", issued.user["id"], "user", issued.user["id"]
+        )
         return AuthResponse(
             user=UserPublic.model_validate(request.app.state.auth.public_user(issued.user)),
             message="Signed in",
@@ -171,12 +193,88 @@ def create_app(database_path: Path | None = None) -> FastAPI:
     ) -> list[dict]:
         return request.app.state.repository.providers()
 
+    @app.get("/api/hospitals")
+    def hospitals(request: Request, session: dict = Depends(current_session)) -> list[dict]:
+        return request.app.state.repository.hospitals()
+
+    @app.get("/api/patients")
+    def patients(request: Request, session: dict = Depends(current_session)) -> list[dict]:
+        return request.app.state.repository.patients()
+
+    @app.get("/api/dashboard")
+    def dashboard(request: Request, session: dict = Depends(current_session)) -> dict:
+        return request.app.state.repository.summary(session["user_id"])
+
+    @app.get("/api/medical-fields/nearby")
+    def nearby_medical_fields(
+        request: Request, patient_id: str = Query(pattern=r"^PAT-\d{3}$"),
+        session: dict = Depends(current_session),
+    ) -> list[dict]:
+        repository = request.app.state.repository
+        patient = repository.patient(patient_id)
+        if not patient:
+            raise HTTPException(status_code=404, detail="Synthetic patient not found")
+        nearby = []
+        for hospital in repository.hospitals():
+            distance = distance_km(
+                patient["latitude"], patient["longitude"],
+                hospital["latitude"], hospital["longitude"],
+            )
+            nearby.append({
+                "hospital_id": hospital["id"], "hospital_name": hospital["name"],
+                "distance_km": round(distance, 1), "medical_fields": hospital["medical_fields"],
+                "email": hospital["email"], "phone": hospital["phone"],
+                "address": hospital["address"], "synthetic": True,
+            })
+        return sorted(nearby, key=lambda item: item["distance_km"])[:10]
+
+    @app.get("/api/on-call")
+    def on_call(request: Request, session: dict = Depends(current_session)) -> list[dict]:
+        return request.app.state.repository.on_call_doctors()
+
+    @app.get("/api/appointments")
+    def appointments(request: Request, session: dict = Depends(current_session)) -> list[dict]:
+        return request.app.state.repository.appointments(session["user_id"])
+
+    @app.post("/api/appointments", status_code=201)
+    def book_appointment(
+        payload: AppointmentRequest, request: Request,
+        session: dict = Depends(csrf_session),
+    ) -> dict:
+        try:
+            appointment = request.app.state.repository.create_appointment(
+                payload.patient_id, payload.slot_id, session["user_id"], payload.reason
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        request.app.state.repository.log_activity(
+            "appointment_booked", session["user_id"], "appointment", appointment["id"],
+            details={"integration_status": appointment["integration_status"]},
+        )
+        return appointment
+
+    @app.get("/api/activity")
+    def activity(
+        request: Request, session: dict = Depends(current_session),
+        limit: int = Query(default=30, ge=1, le=100),
+    ) -> list[dict]:
+        return request.app.state.repository.activity(session["user_id"], limit)
+
     @app.post("/api/navigate", response_model=NavigationResponse)
     def navigate(
         patient: PatientRequest, request: Request,
         session: dict = Depends(csrf_session),
     ) -> NavigationResponse:
-        return request.app.state.coordinator.navigate(patient)
+        result = request.app.state.coordinator.navigate(patient)
+        request.app.state.repository.record_navigation(
+            session["user_id"], patient.patient_id, result, patient
+        )
+        request.app.state.repository.log_activity(
+            "navigation_completed", session["user_id"], "navigation", result.request_id,
+            details={"urgency": result.triage.urgency,
+                     "specialties": result.recommended_specialties},
+        )
+        return result
 
     return app
 

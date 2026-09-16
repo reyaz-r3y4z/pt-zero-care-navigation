@@ -27,6 +27,7 @@ class Preferences(BaseModel):
 
 
 class PatientRequest(BaseModel):
+    patient_id: str | None = Field(default=None, pattern=r"^PAT-\d{3}$")
     age: int = Field(ge=0, le=120)
     symptoms: list[str] = Field(min_length=1, max_length=20)
     duration_days: int = Field(ge=0, le=3650)
@@ -69,6 +70,7 @@ class Evidence(BaseModel):
 
 class DoctorRecommendation(BaseModel):
     doctor_id: str
+    slot_id: str
     name: str
     professional_title: str
     specialty: str
@@ -76,6 +78,9 @@ class DoctorRecommendation(BaseModel):
     languages: list[str]
     years_experience: int
     hospital_name: str
+    doctor_email: str
+    hospital_email: str
+    hospital_phone: str
     address: str
     distance_km: float
     appointment_start: str
@@ -117,3 +122,9 @@ class UserPublic(BaseModel):
 class AuthResponse(BaseModel):
     user: UserPublic
     message: str
+
+
+class AppointmentRequest(BaseModel):
+    patient_id: str = Field(pattern=r"^PAT-\d{3}$")
+    slot_id: str = Field(min_length=8, max_length=80)
+    reason: str = Field(min_length=3, max_length=300)

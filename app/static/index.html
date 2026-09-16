@@ -39,11 +39,14 @@
       </form>
     </section>
 
-    <div id="workspace" class="workspace hidden">
+    <div id="workspace-shell" class="hidden">
+      <section class="stats" id="stats" aria-label="Database summary"></section>
+      <div id="workspace" class="workspace">
       <section class="card intake-card">
         <div class="section-heading"><div><span class="eyebrow">PATIENT INTAKE</span><h2>Describe the concern</h2></div><span class="step">01</span></div>
         <p class="muted">Use only fictional information. This prototype does not diagnose or provide medical advice.</p>
         <form id="patient-form">
+          <label>Saved synthetic patient<select id="patient"><option value="">Custom patient request</option></select></label>
           <label>Sample scenario<select id="sample"><option value="">Enter a custom demonstration</option></select></label>
           <div class="grid">
             <label>Age<input id="age" type="number" min="0" max="120" value="34" required></label>
@@ -63,6 +66,25 @@
       <section id="results" class="card results-card placeholder" aria-live="polite">
         <div class="radar"><span></span><span></span><span></span></div>
         <h2>Agent results appear here</h2><p class="muted">Select a sample case and run the workflow to inspect routing, evidence, rankings, and the complete decision trace.</p>
+      </section>
+      </div>
+      <section class="operations-grid">
+        <article class="card operation-card">
+          <div class="section-heading"><div><span class="eyebrow">NEARBY CARE DIRECTORY</span><h2>Medical fields near the patient</h2></div></div>
+          <div id="nearby-fields" class="compact-list"><p class="muted">Choose a saved synthetic patient to compare nearby hospitals.</p></div>
+        </article>
+        <article class="card operation-card">
+          <div class="section-heading"><div><span class="eyebrow">ON-CALL SIMULATION</span><h2>Temporary video rooms</h2></div></div>
+          <div id="on-call" class="compact-list"></div>
+        </article>
+        <article class="card operation-card">
+          <div class="section-heading"><div><span class="eyebrow">BOOKING LEDGER</span><h2>Confirmed appointments</h2></div></div>
+          <div id="appointments" class="compact-list"></div>
+        </article>
+        <article class="card operation-card">
+          <div class="section-heading"><div><span class="eyebrow">AUDIT TRAIL</span><h2>Recent activity</h2></div></div>
+          <div id="activity" class="compact-list"></div>
+        </article>
       </section>
     </div>
   </main>

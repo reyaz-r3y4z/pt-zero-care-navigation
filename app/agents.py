@@ -199,10 +199,12 @@ class RankingAgent:
             if accessibility_match and patient.preferences.accessibility:
                 reasons.append("Matches requested accessibility features")
             results.append(DoctorRecommendation(
-                doctor_id=provider["id"], name=provider["name"],
+                doctor_id=provider["id"], slot_id=slot["id"], name=provider["name"],
                 professional_title=provider["professional_title"], specialty=provider["specialty"],
                 expertise=provider["expertise"], languages=provider["languages"],
                 years_experience=provider["years_experience"], hospital_name=provider["hospital_name"],
+                doctor_email=provider["email"], hospital_email=provider["hospital_email"],
+                hospital_phone=provider["hospital_phone"],
                 address=provider["address"], distance_km=round(candidate.distance, 1),
                 appointment_start=slot["start"], consultation_mode=slot["mode"],
                 suitability_score=round(score, 1), reasons=reasons,
@@ -246,4 +248,3 @@ class Coordinator:
             recommended_specialties=specialties, patient_guidance=guidance,
             evidence=evidence, recommendations=recommendations, trace=trace,
         )
-
